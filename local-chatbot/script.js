@@ -1,58 +1,13 @@
-// // Function to toggle chat window
-// function toggleChatWindow() {
-//     var chatWindow = document.getElementById('chatWindow');
-//     if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
-//         chatWindow.style.display = 'flex';
-//     } else {
-//         chatWindow.style.display = 'none';
-//     }
-// }
+require('dotenv').config();
 
-// // Function to send message
-// function sendMessage() {
-//     var input = document.getElementById('chatInput');
-//     var message = input.value.trim();
-//     if (message !== '') {
-//         // Add user message to chat body
-//         addMessageToChat('user', message);
+// Environment variables
+const socket = new WebSocket(window.env.WS_URL);
+const assistantId = window.env.ASSISTANT_ID;
+const threadId = window.env.THREAD_ID;
 
-//         // Simulate bot response (Replace this part later with WebSocket functionality)
-//         setTimeout(function() {
-//             var botReply = "This is a bot response to: " + message;
-//             addMessageToChat('bot', botReply);
-//         }, 1000);
-
-//         // Clear the input field
-//         input.value = '';
-//     }
-// }
-
-// // Function to add message to chat body
-// function addMessageToChat(sender, message) {
-//     var chatBody = document.getElementById('chatBody');
-//     var messageElement = document.createElement('div');
-//     messageElement.classList.add('message');
-//     if (sender === 'user') {
-//         messageElement.classList.add('user-message');
-//     } else {
-//         messageElement.classList.add('bot-message');
-//     }
-//     messageElement.textContent = message;
-//     chatBody.appendChild(messageElement);
-
-//     // Scroll chat body to the bottom
-//     chatBody.scrollTop = chatBody.scrollHeight;
-// }
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-// WebSocket connection
-// WebSocket connection
-const socket = new WebSocket('wss://4bwcngjbd2.execute-api.us-east-1.amazonaws.com/Prod');
 
 // Open WebSocket connection
-socket.onopen = function(event) {
+socket.onopen = function() {
     console.log('WebSocket is connected.');
 };
 
@@ -65,13 +20,14 @@ socket.onerror = function(error) {
 socket.onmessage = function(event) {
     console.log('Message from server', event.data);
 
-    // Assuming the server sends JSON data
-    const messageData = JSON.parse(event.data);
-
-    // Check if the message is from the bot
-    if (messageData.action === 'sendmessage' && messageData.data) {
-        const botReply = messageData.data.question;
-        addMessageToChat('bot', botReply);
+    try {
+        const messageData = JSON.parse(event.data);
+        if (messageData.message) {
+            const botReply = messageData.message || "No response received.";
+            addMessageToChat('bot', botReply); // Add the message to the chat window
+        }
+    } catch (e) {
+        console.log('Error parsing message:', e);
     }
 };
 
@@ -97,22 +53,20 @@ function toggleChatWindow() {
 // Function to send a message
 function sendMessage() {
     var input = document.getElementById('chatInput');
-    var message = input.value.trim();  
-    if (message !== '') {
-        addMessageToChat('user', message); 
+    var message = input.value.trim();
 
-        // WebSocket message payload with user's input
+    if (message !== '') {
+        addMessageToChat('user', message);
+
         const messagePayload = {
             action: 'sendmessage',
             data: {
                 question: message,
-                assistant_id: 'asst_SzVrgEGUGgOsGr5xuszO3oo5',
-            thread_id: 'thread_Ljf0eu0BaJFojQaJEHvb9eTt'
+                assistant_id: assistantId,
+                thread_id: threadId
             },
-            
         };
 
-        
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(messagePayload));
         } else {
@@ -128,11 +82,13 @@ function addMessageToChat(sender, message) {
     var chatBody = document.getElementById('chatBody');
     var messageElement = document.createElement('div');
     messageElement.classList.add('message');
+
     if (sender === 'user') {
         messageElement.classList.add('user-message');
     } else {
         messageElement.classList.add('bot-message');
     }
+
     messageElement.textContent = message;
     chatBody.appendChild(messageElement);
 
@@ -140,7 +96,7 @@ function addMessageToChat(sender, message) {
     chatBody.scrollTop = chatBody.scrollHeight;
 }
 
-
+// Send message on Enter key press
 document.getElementById('chatInput').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         sendMessage();

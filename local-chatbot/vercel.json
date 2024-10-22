@@ -2,14 +2,14 @@
     "version": 2,
     "builds": [
       {
-        "src": "local-chatbot/public/**/*",
+        "src": "/public/**/*",
         "use": "@vercel/static-build"
       }
     ],
     "routes": [
       {
         "src": "/(.*)",
-        "dest": "/local-chatbot/public/index.html"
+        "dest": "/public/index.html"
       }
     ]
   }
